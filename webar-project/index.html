@@ -99,15 +99,15 @@
     // ==========================================
     // A-Frame カスタムコンポーネント: アニメーション付きグループ回転
     // ==========================================
-    AFRAME.registerComponent('rotate-group', {
-      schema: {
-        speed: { type: 'number', default: 30 } // 1秒あたりの回転度数
-      },
-      tick: function (time, timeDelta) {
-        const delta = (this.data.speed * timeDelta) / 1000;
-        this.el.object3D.rotation.y += THREE.MathUtils.degToRad(delta);
-      }
-    });
+    // AFRAME.registerComponent('rotate-group', {
+    //   schema: {
+    //     speed: { type: 'number', default: 30 } // 1秒あたりの回転度数
+    //   },
+    //   tick: function (time, timeDelta) {
+    //     const delta = (this.data.speed * timeDelta) / 1000;
+    //     this.el.object3D.rotation.y += THREE.MathUtils.degToRad(delta);
+    //   }
+    // });
 
     // ==========================================
     // A-Frameの初期化完了を待ってからマーカー・モデルを生成
@@ -137,7 +137,7 @@
         const groupEl = document.createElement('a-entity');
         groupEl.setAttribute('id', 'flower-group');
         groupEl.setAttribute('visible', 'false'); // 最初は非表示
-        groupEl.setAttribute('rotate-group', 'speed: 30'); // ゆっくり回転
+        // groupEl.setAttribute('rotate-group', 'speed: 30'); // ゆっくり回転
 
         // ---------- メインモデル ----------
         const cfg0 = modelConfigs[0];
