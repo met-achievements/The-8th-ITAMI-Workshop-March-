@@ -83,7 +83,7 @@
     // ==========================================
     // A-Frameの初期化完了を待ってからマーカー・モデルを生成
     // ==========================================
-    document.addEventListener('DOMContentLoaded', () => {
+   document.querySelector('a-scene').addEventListener('loaded', () => {
       setTimeout(() => {
         if (!modelPath || !markerPath) {
           console.error('modelPath or markerPath is not set');
