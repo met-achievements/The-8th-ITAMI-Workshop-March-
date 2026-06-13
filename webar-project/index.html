@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>WebAR Project</title>
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
 </head>
 <body style="margin: 0; overflow: hidden;">
   
@@ -25,10 +25,7 @@
       console.error('Error: id または model パラメータが指定されていません');
       document.body.innerHTML = '<h1>Error: id parameter is required</h1>';
     } else {
-      // レポジトリの変更によるエラーか？パスを絶対パスにしてみる。
-      // modelPath = `https://アカウント名.github.io/リポジトリ名/assets/設定したID/model.glb`
       modelPath = `./assets/${targetId}/model.glb`;
-      // markerPath = `https://アカウント名.github.io/リポジトリ名/assets/設定したID/model.glb`
       markerPath = `./assets/${targetId}/pattern.patt`;
 
       console.log(`Loading Model: ${modelPath}`);
@@ -46,7 +43,7 @@
         rotation: { x: 0, y: 180, z: 0 }  // A-Frameはラジアンではなく度数
       },
       {
-        // サブモデル（sub.glb）の設定 ※使用する場合は subModelPath を設定
+        // サブモデル（sub.glb）の設定
         position: { x: 0, y: 2, z: 0 },
         scale:    { x: 1, y: 1, z: 1 },
         rotation: { x: 0, y: -90, z: 0 }
@@ -54,15 +51,47 @@
     ];
 
     // サブモデルのパス（不要なら null にする）
-    // 例: `./assets/${targetId}/sub.glb`
     const subModelPath = `./assets/submodel/square_pot.glb`;
+
+    // ==========================================
+    // マテリアル修正の共通関数
+    // ==========================================
+    function fixMaterials(modelEl) {
+      modelEl.addEventListener('model-loaded', () => {
+        console.log('model loaded, fixing materials...');
+        const mesh = modelEl.getObject3D('mesh');
+        if (!mesh) return;
+
+        mesh.traverse((object) => {
+          if (object.isMesh && object.material) {
+            object.material.metalness = 0.0;
+            object.material.roughness = 0.5;
+
+            if (object.material.map) {
+              // 原因3対策: 1.4.0環境に合わせ安全な古い記述もフォールバックとして用意
+              if (THREE.SRGBColorSpace) {
+                object.material.map.colorSpace = THREE.SRGBColorSpace;
+              } else if (THREE.sRGBEncoding) {
+                object.material.map.encoding = THREE.sRGBEncoding;
+              }
+              object.material.map.needsUpdate = true;
+            }
+
+            object.material.flatShading = false;
+            object.material.needsUpdate = true;
+
+            if (object.geometry) {
+              object.geometry.computeVertexNormals();
+            }
+          }
+        });
+        console.log('Materials fixed');
+      });
+    }
   </script>
 
   <a-scene id="ar-scene" embedded arjs="debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
-
-    <!-- AmbientLight: シーン全体をうっすら照らす環境光 -->
     <a-light type="ambient" color="#ffffff" intensity="1.0"></a-light>
-
     <a-entity camera></a-entity>
   </a-scene>
 
@@ -83,7 +112,7 @@
     // ==========================================
     // A-Frameの初期化完了を待ってからマーカー・モデルを生成
     // ==========================================
-   document.querySelector('a-scene').addEventListener('loaded', () => {
+    document.querySelector('a-scene').addEventListener('loaded', () => {
       setTimeout(() => {
         if (!modelPath || !markerPath) {
           console.error('modelPath or markerPath is not set');
@@ -97,19 +126,18 @@
         markerEl.setAttribute('type', 'pattern');
         markerEl.setAttribute('url', markerPath);
         markerEl.setAttribute('emitevents', 'true');
-        markerEl.setAttribute('smooth', 'true');        // ★追加：検出を安定させる
-        markerEl.setAttribute('smoothCount', '5');       // ★追加
-        markerEl.setAttribute('smoothTolerance', '0.01'); // ★追加
-        markerEl.setAttribute('smoothThreshold', '2');   // ★追加
+        markerEl.setAttribute('smooth', 'true');
+        markerEl.setAttribute('smoothCount', '5');
+        markerEl.setAttribute('smoothTolerance', '0.01');
+        markerEl.setAttribute('smoothThreshold', '2');
 
         // ==========================================
-        // グループ用エンティティ（AmbientLight + モデルを統合）
-        // rotate-group コンポーネントでアニメーション
+        // グループ用エンティティ
         // ==========================================
         const groupEl = document.createElement('a-entity');
         groupEl.setAttribute('id', 'flower-group');
-        groupEl.setAttribute('visible', 'false'); // ★最初は非表示
-        groupEl.setAttribute('rotate-group', 'speed: 30'); // ゆっくり回転（不要なら削除）
+        groupEl.setAttribute('visible', 'false'); // 最初は非表示
+        // groupEl.setAttribute('rotate-group', 'speed: 30'); // ゆっくり回転
 
         // ---------- メインモデル ----------
         const cfg0 = modelConfigs[0];
@@ -118,9 +146,13 @@
         mainModelEl.setAttribute('position', `${cfg0.position.x} ${cfg0.position.y} ${cfg0.position.z}`);
         mainModelEl.setAttribute('scale',    `${cfg0.scale.x} ${cfg0.scale.y} ${cfg0.scale.z}`);
         mainModelEl.setAttribute('rotation', `${cfg0.rotation.x} ${cfg0.rotation.y} ${cfg0.rotation.z}`);
+        
+        // ★メインモデルにマテリアル修正を適用
+        fixMaterials(mainModelEl);
+        
         groupEl.appendChild(mainModelEl);
 
-        // ---------- サブモデル（subModelPath が設定されている場合のみ） ----------
+        // ---------- サブモデル ----------
         if (subModelPath) {
           const cfg1 = modelConfigs[1];
           const subModelEl = document.createElement('a-entity');
@@ -128,9 +160,14 @@
           subModelEl.setAttribute('position', `${cfg1.position.x} ${cfg1.position.y} ${cfg1.position.z}`);
           subModelEl.setAttribute('scale',    `${cfg1.scale.x} ${cfg1.scale.y} ${cfg1.scale.z}`);
           subModelEl.setAttribute('rotation', `${cfg1.rotation.x} ${cfg1.rotation.y} ${cfg1.rotation.z}`);
+          
+          // ★サブモデルにもマテリアル修正を適用
+          fixMaterials(subModelEl);
+          
           groupEl.appendChild(subModelEl);
         }
 
+        // マーカー検出イベント
         markerEl.addEventListener('markerFound', () => {
           groupEl.setAttribute('visible', 'true');
           console.log('Marker found: showing model');
