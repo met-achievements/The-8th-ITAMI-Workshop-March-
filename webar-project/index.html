@@ -25,7 +25,7 @@
       console.error('Error: id または model パラメータが指定されていません');
       document.body.innerHTML = '<h1>Error: id parameter is required</h1>';
     } else {
-      modelPath = `./assets/${targetId}/model.glb`;
+      modelPath = `./assets/${targetId}/${targetId}.glb`;
       markerPath = `./assets/${targetId}/pattern.patt`;
 
       console.log(`Loading Model: ${modelPath}`);
