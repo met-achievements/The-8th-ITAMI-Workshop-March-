@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>スタッフ用 | Christmas Memories</title><link rel="stylesheet" href="style.css"></head>
+<body>
+  <header class="masthead"><a class="brand" href="./"><span class="brand-star" aria-hidden="true">✳</span><span>CHRISTMAS<br><strong>MEMORIES</strong></span></a><a class="nav-link" href="./">プレビューに戻る</a></header>
+  <main class="admin-main">
+    <p class="eyebrow">STAFF DESK</p><h1>思い出を、届ける準備。</h1>
+    <p class="admin-lead">先にQRを印刷して、当日撮った写真をあとから登録できます。</p>
+    <div class="tabs" role="tablist" aria-label="スタッフの作業"><button class="tab" id="tab-print" role="tab" aria-selected="true" aria-controls="panel-print" type="button">QRを事前に作る</button><button class="tab" id="tab-upload" role="tab" aria-selected="false" aria-controls="panel-upload" type="button">写真を登録する</button></div>
+    <section id="panel-print" role="tabpanel" aria-labelledby="tab-print">
+      <div class="non-print">
+        <div class="form-grid"><label class="field">作る枚数<input id="ticket-count" type="number" min="1" max="60" value="6" required><small>A4・1枚に6組分。最大60組ずつ作成できます。</small></label><label class="field">最初の受付番号<input id="start-number" type="number" min="1" max="99999" value="1" required><small>受付番号は目印です。QRごとに専用のIDが発行されます。</small></label></div>
+        <div class="form-actions"><button type="button" class="button button-dark" id="generate-tickets">QRを作成する</button><button type="button" class="button button-light" id="print-tickets" disabled>印刷する</button><button type="button" class="button button-light" id="save-tickets" disabled>管理リストを保存</button><label class="button button-light" for="import-tickets">管理リストを開く</label><input id="import-tickets" type="file" accept="application/json,.json" hidden></div>
+        <div class="notice"><p>① QRを作成 → ② 管理リストを保存 → ③ 印刷。印刷設定は「A4・縦・倍率100%」がおすすめです。<br>管理リストと印刷したQRは、写真を開くための情報を含みます。管理リストはGitHubにアップロードせず、スタッフの端末に保管してください。</p></div>
+        <p class="admin-status" id="print-status" role="status"></p><p class="error" id="print-error" role="alert" hidden></p>
+      </div>
+      <div class="ticket-grid" id="ticket-grid"></div>
+    </section>
+    <section id="panel-upload" role="tabpanel" aria-labelledby="tab-upload" hidden>
+      <div class="upload-layout"><div>
+        <label class="field">登録するQRのURL<textarea id="ticket-url" placeholder="印刷したQRを開いて、URLを貼り付けてください。" spellcheck="false" autocomplete="off"></textarea><small>QRから開いた画面の「写真の登録」を押すと、自動で入力されます。</small></label>
+        <p class="admin-status" id="ticket-status" role="status">QRを選んでください。</p>
+        <label class="field">当日撮った写真<input id="registration-photo" type="file" accept="image/jpeg,image/png,image/webp"><small>JPEG・PNG・WebP、25MBまで。写真は端末内で縮小・暗号化します。</small></label>
+        <div class="form-actions"><button type="button" class="button button-dark" id="export-photo" disabled>① 登録ファイルを保存</button><a class="button button-light" id="github-upload" href="#" target="_blank" rel="noopener noreferrer">② GitHubにアップロード ↗</a></div>
+        <p class="error" id="upload-error" role="alert" hidden></p><p class="admin-status" id="upload-status" role="status"></p>
+        <div id="upload-result" hidden><a id="check-photo" target="_blank" rel="noopener noreferrer">③ 登録後の写真を確認 ↗</a></div>
+      </div><div><div class="photo-thumbnail"><span id="thumbnail-empty">選んだ写真をここに表示します</span><img id="photo-thumbnail" alt="登録する写真のプレビュー" hidden></div><ol class="step-list"><li>渡すQRと写真が合っているか確認。</li><li>「①」で登録ファイルを端末に保存。</li><li>「②」でGitHubを開き、保存したファイルを追加して「Commit changes」。</li><li>数分後、同じQRを開いて写真を確認。</li></ol></div></div>
+      <div class="notice"><p>この試作版は、GitHubへのファイル追加で写真を登録します。元の写真や管理リストは追加せず、画面が出力する <code>ランダムID.json</code> だけをアップロードしてください。<br>登録ファイルは暗号化されていますが、QRを持つ人は写真を開けます。参加者のQRをSNS等に掲載しない運用にしてください。</p></div>
+    </section>
+  </main>
+  <footer class="footer"><span>A little snow. A lasting memory.</span><a href="./">スノードームを見る</a></footer>
+  <script type="module" src="admin.mjs"></script>
+</body></html>

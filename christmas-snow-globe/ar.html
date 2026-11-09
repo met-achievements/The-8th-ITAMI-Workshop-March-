@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>ARで見る | Christmas Memories</title><link rel="stylesheet" href="style.css"></head>
+<body class="ar-page">
+  <div class="ar-top"><a id="back-link" href="./">← 3D表示に戻る</a><span>CHRISTMAS MEMORIES</span></div>
+  <main id="ar-start" class="ar-start"><p class="eyebrow">YOUR MEMORY, IN YOUR HAND</p><h1>小さな冬を、<br>手のひらに。</h1><p>カメラを起動して、台紙の黒枠マーカー全体を画面に入れてください。</p><p>明るい場所で、台紙を平らに置くと見つけやすくなります。</p><button type="button" class="button" id="start-camera">カメラを起動する ↗</button><img class="ar-marker-preview" src="hiro.png" alt="台紙にある、このHiroマーカーを使います"><p><a href="marker.html" target="_blank" rel="noopener noreferrer">マーカーを別画面で表示・印刷 ↗</a></p></main>
+  <p id="ar-error" class="ar-error error" role="alert" hidden></p><div class="ar-bottom" id="tracking-status" role="status" hidden>台紙の黒枠マーカーを探しています…</div>
+  <script type="module" src="ar.mjs"></script>
+</body></html>
