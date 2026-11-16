@@ -33,6 +33,14 @@
   </main>
   <section class="how-to"><span class="eyebrow">TAKE YOUR MEMORY HOME</span><p><b>01</b> QRを読み込む</p><p><b>02</b> ARで見るを押す</p><p><b>03</b> 台紙の黒枠マーカーにかざす</p></section>
   <footer class="footer"><span>A little snow. A lasting memory.</span><div><a href="marker.html">ARマーカー</a><a id="register-link" href="admin.html#upload">写真の登録</a></div></footer>
-  <script type="module" src="viewer.mjs"></script>
+  <script type="module">
+    import { relatedUrl } from './media.mjs';
+    const params = new URL(location.href).searchParams;
+    if (params.has('id') && params.get('view') !== '3d') {
+      location.replace(relatedUrl('ar.html'));
+    } else {
+      import('./viewer.mjs');
+    }
+  </script>
 </body>
 </html>
