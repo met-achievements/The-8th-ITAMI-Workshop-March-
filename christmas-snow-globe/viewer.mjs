@@ -7,6 +7,11 @@ const arLink=document.getElementById('ar-link'),register=document.getElementById
 const swirl=document.getElementById('swirl'),pause=document.getElementById('pause-snow');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 let paused=reduced.matches,globe,renderer,currentState;
+if (new URL(location.href).searchParams.has('id')) {
+  document.body.classList.add('ticket-view');
+  const introduction = document.querySelector('.introduction');
+  introduction.before(document.querySelector('.globe-stage'));
+}
 function fail(e){error.textContent=e?.message||'表示できませんでした。ページを再読み込みしてください。';error.hidden=false;}
 function updateLinks(){arLink.href=relatedUrl('ar.html');const target=relatedUrl('admin.html');target.searchParams.set('tab','upload');register.href=target;}
 function updatePause(){pause.textContent=paused?'雪を動かす':'雪を止める';pause.setAttribute('aria-pressed',String(paused));}

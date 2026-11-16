@@ -1,6 +1,8 @@
 import { createSnowGlobe } from './globe.mjs';
 import { readCurrentPhoto,photoCanvas,relatedUrl } from './media.mjs';
 const start=document.getElementById('start-camera'),error=document.getElementById('ar-error'),status=document.getElementById('tracking-status');
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const globeViewTilt = Math.PI / 12;
 document.getElementById('back-link').href=relatedUrl('./');
 function loadScript(url){return new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=url;script.onload=resolve;script.onerror=()=>reject(new Error('ARの読み込みに失敗しました。通信を確認して再度お試しください。'));document.head.append(script);});}
 let scene,globe;
@@ -16,7 +18,34 @@ start.addEventListener('click',async()=>{
     if(!window.AFRAME)await loadScript('https://aframe.io/releases/1.4.0/aframe.min.js');
     if(!window.AFRAME.systems.arjs)await loadScript('https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js');
     const THREE=window.AFRAME.THREE;
-    if(!window.AFRAME.components['christmas-snow'])window.AFRAME.registerComponent('christmas-snow',{tick(_time,delta){if(globe&&!matchMedia('(prefers-reduced-motion: reduce)').matches&&this.el.object3D.visible)globe.update(delta/1000);}});
+    if (!window.AFRAME.components['christmas-snow']) {
+      window.AFRAME.registerComponent('christmas-snow', {
+        init() {
+          this.markerRotation = new THREE.Quaternion();
+          this.cameraRotation = new THREE.Quaternion();
+          this.viewUp = new THREE.Vector3();
+        },
+        tick(_time, delta) {
+          const marker = this.el.object3D;
+          const camera = this.el.sceneEl.camera;
+          if (!globe || !marker.visible || !camera) return;
+
+          // Marker Y points out of the paper. Correct pitch in marker space so
+          // the frame is readable even when the marker is held upright.
+          marker.getWorldQuaternion(this.markerRotation);
+          camera.getWorldQuaternion(this.cameraRotation);
+          this.viewUp.set(0, 1, 0)
+            .applyQuaternion(this.cameraRotation)
+            .applyQuaternion(this.markerRotation.invert());
+          const { y, z } = this.viewUp;
+          if (Math.hypot(y, z) > 0.1) {
+            globe.root.rotation.x = Math.atan2(z, y) + globeViewTilt;
+          }
+
+          if (!reducedMotion.matches) globe.update(delta / 1000);
+        },
+      });
+    }
     scene=document.createElement('a-scene');
     scene.setAttribute('embedded','');scene.setAttribute('vr-mode-ui','enabled: false');
     scene.setAttribute('renderer','alpha: true; antialias: true; colorManagement: true');
@@ -29,8 +58,8 @@ start.addEventListener('click',async()=>{
     globe=createSnowGlobe(THREE,photoCanvas(photo.image));globe.root.scale.setScalar(.60);
     entity.addEventListener('loaded',()=>entity.object3D.add(globe.root),{once:true});
     const camera=document.createElement('a-entity');camera.setAttribute('camera','');camera.setAttribute('look-controls','enabled: false');scene.append(camera);
-    marker.addEventListener('markerFound',()=>status.textContent='スノードームを表示中 · 台紙を画面に入れたまま動かせます');
-    marker.addEventListener('markerLost',()=>status.textContent='台紙の黒枠マーカー全体を画面に入れてください');
+    marker.addEventListener('markerFound',()=>status.textContent='スノードームを表示中');
+    marker.addEventListener('markerLost',()=>status.textContent='黒枠マーカー全体を画面に入れてください');
     const cameraError=()=>{
       stopCamera();document.getElementById('ar-start').hidden=false;status.hidden=true;
       error.textContent='カメラを起動できませんでした。ブラウザのカメラ許可を確認して、ページを開き直してください。';error.hidden=false;

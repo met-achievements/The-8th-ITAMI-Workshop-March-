@@ -9,8 +9,13 @@
     <section id="panel-print" role="tabpanel" aria-labelledby="tab-print">
       <div class="non-print">
         <div class="form-grid"><label class="field">作る枚数<input id="ticket-count" type="number" min="1" max="60" value="6" required><small>A4・1枚に6組分。最大60組ずつ作成できます。</small></label><label class="field">最初の受付番号<input id="start-number" type="number" min="1" max="99999" value="1" required><small>受付番号は目印です。QRごとに専用のIDが発行されます。</small></label></div>
-        <div class="form-actions"><button type="button" class="button button-dark" id="generate-tickets">QRを作成する</button><button type="button" class="button button-light" id="print-tickets" disabled>印刷する</button><button type="button" class="button button-light" id="save-tickets" disabled>管理リストを保存</button><label class="button button-light" for="import-tickets">管理リストを開く</label><input id="import-tickets" type="file" accept="application/json,.json" hidden></div>
-        <div class="notice"><p>① QRを作成 → ② 管理リストを保存 → ③ 印刷。印刷設定は「A4・縦・倍率100%」がおすすめです。<br>管理リストと印刷したQRは、写真を開くための情報を含みます。管理リストはGitHubにアップロードせず、スタッフの端末に保管してください。</p></div>
+        <div class="form-actions"><button type="button" class="button button-dark" id="generate-tickets">QRを作成する</button><button type="button" class="button button-light" id="print-tickets" disabled>印刷する</button></div>
+        <p class="helper">印刷設定は「A4・縦・倍率100%」がおすすめです。 <a href="marker.html" target="_blank" rel="noopener noreferrer">ARマーカーを別紙に印刷 ↗</a></p>
+        <details class="notice">
+          <summary>同じQRを再印刷する場合</summary>
+          <p>管理リストを保存しておくと、後から開いて同じQRを印刷できます。リストには写真を開くための情報が含まれるので、スタッフの端末に保管してください。</p>
+          <div class="form-actions"><button type="button" class="button button-light" id="save-tickets" disabled>管理リストを保存</button><label class="button button-light" for="import-tickets">管理リストを開く</label><input id="import-tickets" type="file" accept="application/json,.json" hidden></div>
+        </details>
         <p class="admin-status" id="print-status" role="status"></p><p class="error" id="print-error" role="alert" hidden></p>
       </div>
       <div class="ticket-grid" id="ticket-grid"></div>
