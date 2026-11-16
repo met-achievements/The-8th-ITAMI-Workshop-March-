@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>スタッフ用 | Christmas Memories</title><link rel="stylesheet" href="style.css"></head>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>スタッフ用 | Christmas Memories</title><link rel="stylesheet" href="style.css"><link rel="preload" href="met-icon.png" as="image"></head>
 <body>
   <header class="masthead"><a class="brand" href="./"><span class="brand-star" aria-hidden="true">✳</span><span>CHRISTMAS<br><strong>MEMORIES</strong></span></a><a class="nav-link" href="./">プレビューに戻る</a></header>
   <main class="admin-main">
@@ -8,9 +8,9 @@
     <div class="tabs" role="tablist" aria-label="スタッフの作業"><button class="tab" id="tab-print" role="tab" aria-selected="true" aria-controls="panel-print" type="button">QRを事前に作る</button><button class="tab" id="tab-upload" role="tab" aria-selected="false" aria-controls="panel-upload" type="button">写真を登録する</button></div>
     <section id="panel-print" role="tabpanel" aria-labelledby="tab-print">
       <div class="non-print">
-        <div class="form-grid"><label class="field">作る枚数<input id="ticket-count" type="number" min="1" max="60" value="6" required><small>A4・1枚に6組分。最大60組ずつ作成できます。</small></label><label class="field">最初の受付番号<input id="start-number" type="number" min="1" max="99999" value="1" required><small>受付番号は目印です。QRごとに専用のIDが発行されます。</small></label></div>
+        <div class="form-grid"><label class="field">作る枚数<input id="ticket-count" type="number" min="1" max="60" value="6" required><small>台紙は横32 mm × 縦45 mm。A4の1枚に25組分まで印刷できます。</small></label><label class="field">最初の受付番号<input id="start-number" type="number" min="1" max="99999" value="1" required><small>受付番号は目印です。QRごとに専用のIDが発行されます。</small></label></div>
         <div class="form-actions"><button type="button" class="button button-dark" id="generate-tickets">QRを作成する</button><button type="button" class="button button-light" id="print-tickets" disabled>印刷する</button></div>
-        <p class="helper">印刷設定は「A4・縦・倍率100%」がおすすめです。 <a href="marker.html" target="_blank" rel="noopener noreferrer">ARマーカーを別紙に印刷 ↗</a></p>
+        <p class="helper">「A4・縦・実際のサイズ（100%）」で印刷し、点線に沿って切り取ってください。 <a href="marker.html" target="_blank" rel="noopener noreferrer">ARマーカーを別紙に印刷 ↗</a></p>
         <details class="notice">
           <summary>同じQRを再印刷する場合</summary>
           <p>管理リストを保存しておくと、後から開いて同じQRを印刷できます。リストには写真を開くための情報が含まれるので、スタッフの端末に保管してください。</p>
