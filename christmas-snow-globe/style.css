@@ -20,6 +20,41 @@
 .ticket-view .small-note {
   max-width: none;
 }
+.stage-actions {
+  flex-wrap: wrap;
+}
+@media (max-width: 620px) {
+  .ticket-view .experience { padding-inline: 10px; }
+}
+.ar-zoom-button, .photo-zoom-close {
+  min-height: 44px;
+  padding: 6px 14px;
+  border: 1px solid #ffffff55;
+  border-radius: 24px;
+  background: #142928eb;
+  color: #fff;
+  font-size: 13px;
+}
+.photo-zoom {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: #101918;
+}
+.photo-zoom:not([open]) { display: none; }
+.photo-zoom[open] { display: grid; place-items: center; }
+.photo-zoom img { width: 100%; height: 100%; min-width: 0; min-height: 0; object-fit: contain; }
+.photo-zoom-close {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+}
 .camera-active {
   width: 100%;
   height: 100%;

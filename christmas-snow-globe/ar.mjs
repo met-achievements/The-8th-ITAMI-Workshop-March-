@@ -1,5 +1,5 @@
-import { createSnowGlobe } from './globe.mjs';
-import { readCurrentPhoto, photoCanvas, relatedUrl } from './media.mjs';
+import { createSnowGlobe, globeCenterY, globeRadius } from './globe.mjs';
+import { createPhotoZoom, readCurrentPhoto, photoCanvas, relatedUrl } from './media.mjs';
 import { ticketUrl } from './tickets.mjs';
 import { createTicketPattern, ticketPatternRatio } from './ticket-marker.mjs';
 
@@ -9,6 +9,7 @@ const retry = document.getElementById('retry-photo');
 const message = document.getElementById('ar-message');
 const error = document.getElementById('ar-error');
 const status = document.getElementById('tracking-status');
+const setZoomPhoto = createPhotoZoom(document.getElementById('zoom-photo'));
 const params = new URL(location.href).searchParams;
 const isTicket = params.has('id');
 const usesKeychain = isTicket && params.get('marker') !== 'hiro';
@@ -31,7 +32,7 @@ const hiroUrl = relatedUrl('ar.html');
 hiroUrl.searchParams.set('marker', 'hiro');
 hiroLink.href = hiroUrl;
 
-let photo, scene, globe, patternUrl, cameraSize;
+let photo, scene, globe, patternUrl, cameraSize, cameraDisplay;
 let leaving = false;
 
 function loadScript(url) {
@@ -48,6 +49,7 @@ async function loadPhoto() {
   error.hidden = true;
   start.hidden = true;
   retry.hidden = true;
+  setZoomPhoto(null);
   message.textContent = '写真を確認しています…';
   try {
     photo = await readCurrentPhoto();
@@ -57,6 +59,7 @@ async function loadPhoto() {
       return;
     }
     message.textContent = trackingHint;
+    setZoomPhoto(photo.image);
     start.hidden = false;
     hiroLink.hidden = !usesKeychain;
     document.getElementById('hiro-help').hidden = usesKeychain;
@@ -73,6 +76,7 @@ function stopCamera() {
   window.removeEventListener('arjs-video-loaded', cameraReady);
   cameraSize?.disconnect();
   cameraSize = null;
+  cameraDisplay = null;
   document.querySelectorAll('video').forEach(video => {
     video.srcObject?.getTracks?.().forEach(track => track.stop());
     video.remove();
@@ -108,6 +112,8 @@ function cameraReady(event) {
     // Clip the renderer and the camera feed to the same rectangle on phones.
     const { width, height } = video.getBoundingClientRect();
     const viewport = document.documentElement;
+    cameraDisplay = { halfWidth: width / 2, halfHeight: height / 2,
+      safeX: viewport.clientWidth * .49, safeY: viewport.clientHeight * .42 };
     scene.style.width = width + 'px';
     scene.style.height = height + 'px';
     scene.style.left = (viewport.clientWidth - width) / 2 + 'px';
@@ -126,6 +132,8 @@ function registerSnow(AFRAME) {
       this.markerRotation = new THREE.Quaternion();
       this.cameraRotation = new THREE.Quaternion();
       this.viewUp = new THREE.Vector3();
+      this.viewPosition = new THREE.Vector3();
+      this.projected = new THREE.Vector3();
     },
     tick(_time, delta) {
       const marker = this.el.object3D;
@@ -141,6 +149,23 @@ function registerSnow(AFRAME) {
       const { y, z } = this.viewUp;
       if (Math.hypot(y, z) > 0.1) {
         globe.root.rotation.x = Math.atan2(z, y) + globeViewTilt;
+      }
+
+      // Fit the globe around the tracked center in the visible part of the camera feed.
+      if (cameraDisplay) {
+        marker.getWorldPosition(this.viewPosition).applyMatrix4(camera.matrixWorldInverse);
+        this.projected.copy(this.viewPosition).applyMatrix4(camera.projectionMatrix);
+        const { halfWidth, halfHeight, safeX, safeY } = cameraDisplay;
+        const availableX = safeX - Math.abs(this.projected.x * halfWidth);
+        const availableY = safeY - Math.abs(this.projected.y * halfHeight);
+        const horizontal = availableX / (halfWidth * camera.projectionMatrix.elements[0]);
+        const vertical = availableY / (halfHeight * camera.projectionMatrix.elements[5]);
+        const fit = Math.max(0, Math.min(horizontal, vertical));
+        const scale = -this.viewPosition.z * fit / (Math.hypot(1, fit) * globeRadius);
+        if (Number.isFinite(scale) && scale >= 0) {
+          globe.root.scale.setScalar(scale);
+          globe.root.position.set(0, -globeCenterY * scale, 0).applyQuaternion(globe.root.quaternion);
+        }
       }
       if (!reducedMotion.matches) globe.update(delta / 1000);
     },
@@ -175,10 +200,10 @@ async function startCamera() {
 
     const ambient = document.createElement('a-light');
     ambient.setAttribute('type', 'ambient');
-    ambient.setAttribute('intensity', '1.5');
+    ambient.setAttribute('intensity', '.78');
     const directional = document.createElement('a-light');
     directional.setAttribute('type', 'directional');
-    directional.setAttribute('intensity', '1.8');
+    directional.setAttribute('intensity', '1.03');
     directional.setAttribute('position', '2 5 3');
 
     const marker = document.createElement('a-marker');

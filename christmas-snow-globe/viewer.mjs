@@ -1,10 +1,11 @@
 import { THREE_URL, PREVIEW_KEY } from './config.mjs';
-import { createSnowGlobe } from './globe.mjs';
-import { photoCanvas, preparePhoto, readCurrentPhoto, relatedUrl } from './media.mjs';
+import { createSnowGlobe, globeCenterY, globeRadius } from './globe.mjs';
+import { createPhotoZoom, photoCanvas, preparePhoto, readCurrentPhoto, relatedUrl } from './media.mjs';
 const status=document.getElementById('photo-status'),error=document.getElementById('error-message');
 const input=document.getElementById('photo-input'),choose=document.getElementById('choose-photo');
 const arLink=document.getElementById('ar-link'),register=document.getElementById('register-link');
 const swirl=document.getElementById('swirl'),pause=document.getElementById('pause-snow');
+const setZoomPhoto = createPhotoZoom(document.getElementById('zoom-photo'));
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 let paused=reduced.matches,globe,renderer,currentState;
 if (new URL(location.href).searchParams.has('id')) {
@@ -17,9 +18,11 @@ function updateLinks(){arLink.href=relatedUrl('ar.html');const target=relatedUrl
 function updatePause(){pause.textContent=paused?'雪を動かす':'雪を止める';pause.setAttribute('aria-pressed',String(paused));}
 async function loadPhoto(){
   error.hidden=true;
+  setZoomPhoto(null);
   try{
     currentState=await readCurrentPhoto();
     const isTicket=!!currentState.ticket;
+    setZoomPhoto(currentState.image);
     choose.hidden=isTicket;
     document.getElementById('privacy-note').textContent=isTicket?'印刷したQRから、いつでもこの写真を開けます。':'選んだ写真は、このタブ内だけでプレビューします。アップロードはされません。';
     document.getElementById('pending-actions').hidden=currentState.state!=='pending';
@@ -34,7 +37,9 @@ async function initialize(){
   const THREE=await import(THREE_URL);
   const holder=document.getElementById('globe-canvas');
   const scene=new THREE.Scene();
-  const camera=new THREE.PerspectiveCamera(37,1,.1,100);camera.position.set(.2,2.35,6.3);camera.lookAt(0,1.35,0);
+  const camera=new THREE.OrthographicCamera(-1,1,1,-1,.1,100);
+  camera.position.set(.16,2.18,6.3);
+  camera.lookAt(0,globeCenterY,0);
   try{renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,powerPreference:'low-power'});}
   catch{
     const {createFallback}=await import('./fallback.mjs');
@@ -56,7 +61,22 @@ async function initialize(){
   globe=createSnowGlobe(THREE,photoCanvas(currentState?.image,currentState?.state==='pending'));scene.add(globe.root);globe.root.rotation.y=-.10;
   const shadowGeo=new THREE.CircleGeometry(1.52,64),shadowMat=new THREE.MeshBasicMaterial({color:0x355749,transparent:true,opacity:.08,depthWrite:false});
   const shadow=new THREE.Mesh(shadowGeo,shadowMat);shadow.rotation.x=-Math.PI/2;shadow.position.y=-.02;scene.add(shadow);
-  const resize=()=>{const w=holder.clientWidth,h=holder.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};new ResizeObserver(resize).observe(holder);resize();
+  function resize() {
+    const width = holder.clientWidth;
+    const height = holder.clientHeight;
+    if (!width || !height) return;
+    renderer.setSize(width, height, false);
+    const aspect = width / height;
+    const halfHeight = globeRadius * 1.06 / Math.min(aspect, 1);
+    camera.top = halfHeight;
+    camera.bottom = -halfHeight;
+    camera.left = -halfHeight * aspect;
+    camera.right = halfHeight * aspect;
+    camera.updateProjectionMatrix();
+  }
+  const sizeObserver = new ResizeObserver(resize);
+  sizeObserver.observe(holder);
+  resize();
   let pointer=null,lastX=0;
   renderer.domElement.addEventListener('pointerdown',e=>{pointer=e.pointerId;lastX=e.clientX;renderer.domElement.setPointerCapture(e.pointerId);});
   renderer.domElement.addEventListener('pointermove',e=>{if(e.pointerId!==pointer)return;globe.root.rotation.y+=(e.clientX-lastX)*.008;lastX=e.clientX;});
@@ -64,7 +84,7 @@ async function initialize(){
   renderer.domElement.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();globe.root.rotation.y+=(e.key==='ArrowLeft'?-.12:.12);}});
   let last=performance.now(),animation;
   function render(now){const dt=(now-last)/1000;last=now;if(!paused&&!document.hidden)globe.update(dt);renderer.render(scene,camera);animation=requestAnimationFrame(render);}animation=requestAnimationFrame(render);
-  window.addEventListener('pagehide',()=>{cancelAnimationFrame(animation);renderer.dispose();globe.dispose();shadowGeo.dispose();shadowMat.dispose();},{once:true});
+  window.addEventListener('pagehide',()=>{cancelAnimationFrame(animation);sizeObserver.disconnect();renderer.dispose();globe.dispose();shadowGeo.dispose();shadowMat.dispose();},{once:true});
   window.addEventListener('pageshow',e=>{if(e.persisted)location.reload();});
   swirl.disabled=false;pause.disabled=false;updatePause();
 }
@@ -74,7 +94,7 @@ input.addEventListener('change',async()=>{
   try{
     const photo=await preparePhoto(input.files[0]);
     try{sessionStorage.setItem(PREVIEW_KEY,photo.dataUrl);const url=new URL(location.href);url.search='?preview=1';url.hash='';history.replaceState(null,'',url);}catch{document.getElementById('privacy-note').textContent='この画面だけでプレビューしています。ARに切り替えるにはタブ内の保存を許可してください。';}
-    globe?.setPhoto(photoCanvas(photo.image));status.textContent='あなたの写真でプレビュー中';updateLinks();
+    globe?.setPhoto(photoCanvas(photo.image));setZoomPhoto(photo.image);status.textContent='あなたの写真でプレビュー中';updateLinks();
   }catch(e){fail(e);}finally{choose.disabled=false;input.value='';}
 });
 document.getElementById('reload-photo').addEventListener('click',()=>loadPhoto());

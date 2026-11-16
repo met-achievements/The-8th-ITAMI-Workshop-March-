@@ -61,15 +61,48 @@ export async function readCurrentPhoto() {
   }
   return { state: 'demo' };
 }
+
+export function createPhotoZoom(button) {
+  const dialog = document.createElement('dialog');
+  dialog.className = 'photo-zoom';
+  dialog.setAttribute('aria-label', '拡大した写真');
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'photo-zoom-close';
+  close.textContent = '閉じる';
+  close.addEventListener('click', () => dialog.close());
+  dialog.append(close);
+  document.body.append(dialog);
+  button.addEventListener('click', () => dialog.showModal());
+
+  return image => {
+    if (dialog.open) dialog.close();
+    dialog.replaceChildren(close);
+    button.hidden = !image || typeof dialog.showModal !== 'function';
+    if (image) {
+      image.alt = 'スノードームの中の写真';
+      dialog.prepend(image);
+    }
+  };
+}
+
 export function photoCanvas(image, pending = false) {
-  const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = 768;
+  const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#f8f4e9'; ctx.fillRect(0, 0, 1024, 768);
   if (image) {
-    const scale = Math.min(984 / image.naturalWidth, 728 / image.naturalHeight);
+    const aspect = Math.min(1.7, Math.max(.67, image.naturalWidth / image.naturalHeight));
+    canvas.width = Math.round(1024 * Math.min(aspect, 1));
+    canvas.height = Math.round(1024 / Math.max(aspect, 1));
+    ctx.fillStyle = '#f8f4e9';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const scale = Math.min(canvas.width / image.naturalWidth, canvas.height / image.naturalHeight);
     const w = image.naturalWidth * scale, h = image.naturalHeight * scale;
-    ctx.drawImage(image, (1024-w)/2, (768-h)/2, w, h);
+    ctx.drawImage(image, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
   } else {
+    canvas.width = 1024;
+    canvas.height = 768;
+    ctx.fillStyle = '#f8f4e9';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     const g = ctx.createLinearGradient(0, 0, 1024, 768);
     g.addColorStop(0, '#153e3e'); g.addColorStop(1, '#2e6660');
     ctx.fillStyle = g; ctx.fillRect(24, 24, 976, 720);
