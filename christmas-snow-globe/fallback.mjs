@@ -1,4 +1,6 @@
 // Canvas preview for browsers where WebGL is unavailable.
+import { loadImage } from './media.mjs';
+
 export function createFallback(holder, initialPhoto) {
   const canvas = document.createElement('canvas');
   holder.append(canvas);
@@ -10,6 +12,8 @@ export function createFallback(holder, initialPhoto) {
   let boost = 0;
   let width = 0;
   let height = 0;
+  let snowman;
+  let disposed = false;
   const flakes = Array.from({ length: 84 }, (_, i) => ({
     x: Math.sin(i * 17.17) * .92, y: (i * .618034) % 1, front: i % 3 === 0,
     size: 1.1 + i % 4 * .25, speed: .07 + i % 5 * .013, phase: i * 1.9,
@@ -39,34 +43,6 @@ export function createFallback(holder, initialPhoto) {
       triangle(x, y - height * .14, half * .68, height * .31, '#f2f6f2');
     }
   }
-  function drawSnowman(x, floor, unit) {
-    ctx.save();
-    ctx.translate(x, floor);
-    ctx.scale(unit, unit);
-    ellipse(0, -.106, .116, .112, '#edf4f6');
-    ellipse(.01, -.249, .089, .083, '#f3f7f8');
-    ellipse(.018, -.363, .070, .065, '#fff');
-    ellipse(-.006, -.374, .009, .011, '#25252b');
-    ellipse(.042, -.379, .009, .011, '#25252b');
-    ctx.fillStyle = '#de8540';
-    ctx.beginPath();
-    ctx.moveTo(.015, -.357);
-    ctx.lineTo(.080, -.350);
-    ctx.lineTo(.016, -.332);
-    ctx.fill();
-    ctx.fillStyle = '#ab312e';
-    ctx.fillRect(-.045, -.312, .123, .027);
-    ctx.fillRect(.047, -.304, .028, .070);
-    ellipse(.005, -.240, .008, .008, '#29242a');
-    ellipse(.001, -.171, .008, .008, '#29242a');
-    ctx.fillStyle = '#27252a';
-    ctx.fillRect(-.030, -.477, .096, .056);
-    ellipse(.018, -.421, .077, .013, '#27252a');
-    ctx.fillStyle = '#ab312e';
-    ctx.fillRect(-.030, -.438, .096, .014);
-    ctx.restore();
-  }
-
   function drawFlakes(front, cx, cy, r, clear) {
     for (const flake of flakes) {
       if (flake.front !== front) continue;
@@ -105,20 +81,19 @@ export function createFallback(holder, initialPhoto) {
     ctx.arc(cx, cy, r, Math.PI - edge, 2 * Math.PI + edge);
     ctx.closePath();
     ctx.clip();
-    const glass = ctx.createRadialGradient(cx - r * .40, cy - r * .53, r * .04, cx, cy, r);
-    glass.addColorStop(0, '#f9fdfd');
-    glass.addColorStop(.78, '#e2f0ed');
-    glass.addColorStop(1, '#bfd8d8');
+    const glass = ctx.createRadialGradient(cx, cy, r * .24, cx, cy, r);
+    glass.addColorStop(0, 'rgba(234,250,250,.12)');
+    glass.addColorStop(.77, 'rgba(224,244,245,.24)');
+    glass.addColorStop(.96, 'rgba(177,216,222,.5)');
+    glass.addColorStop(1, 'rgba(124,180,190,.65)');
     ctx.fillStyle = glass;
     ctx.fillRect(cx - r, cy - r, 2 * r, 2 * r);
     drawFlakes(false, cx, cy, r, frame);
 
     ellipse(cx, floor, r * .83, r * .137, '#f9fcfa');
-    tree(cx - .72 * r, floor - .02 * r, .89 * r, '#174b3d');
-    tree(cx - .48 * r, floor - .12 * r, 1.44 * r, '#2b6454');
-    tree(cx - .13 * r, floor - .18 * r, 1.12 * r, '#174b3d');
-    tree(cx + .40 * r, floor - .14 * r, 1.47 * r, '#174b3d');
-    tree(cx + .71 * r, floor - .04 * r, .93 * r, '#2b6454');
+    tree(cx - .72 * r, floor - .02 * r, .82 * r, '#174b3d');
+    tree(cx - .43 * r, floor - .13 * r, 1.31 * r, '#2b6454');
+    tree(cx + .70 * r, floor - .08 * r, .89 * r, '#174b3d');
 
     ctx.fillStyle = '#694337';
     ctx.fillRect(cx - r * .114, frame.bottom - trim, r * .055, Math.max(0, floor - frame.bottom + trim));
@@ -138,20 +113,30 @@ export function createFallback(holder, initialPhoto) {
     ctx.textBaseline = 'middle';
     ctx.fillText('Merry Christmas', photoLeft + photoWidth / 2, labelY + plaque * .54, photoWidth * .95);
 
-    drawSnowman(cx + r * .74, floor - r * .045, r);
+    if (snowman) {
+      const figureHeight = r * .49;
+      const figureWidth = figureHeight * snowman.naturalWidth / snowman.naturalHeight;
+      ctx.drawImage(snowman, cx + r * .67 - figureWidth / 2, floor - r * .027 - figureHeight,
+        figureWidth, figureHeight);
+    }
     drawFlakes(true, cx, cy, r, frame);
     ctx.restore();
 
-    ctx.strokeStyle = 'rgba(120,173,179,.55)';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(92,149,160,.66)';
+    ctx.lineWidth = Math.max(1.4, r * .011);
     ctx.beginPath();
     ctx.arc(cx, cy, r, Math.PI - edge, 2 * Math.PI + edge);
     ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,.70)';
-    ctx.lineWidth = Math.max(2, r * .022);
+    ctx.strokeStyle = 'rgba(255,255,255,.81)';
+    ctx.lineWidth = r * .048;
     ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.arc(cx, cy, r * .90, Math.PI * 1.19, Math.PI * 1.36);
+    ctx.arc(cx, cy, r * .89, Math.PI * 1.17, Math.PI * 1.37);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(251,255,255,.66)';
+    ctx.lineWidth = r * .020;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * .947, -.28, .41);
     ctx.stroke();
 
     const base = r * .83;
@@ -174,11 +159,16 @@ export function createFallback(holder, initialPhoto) {
   const observer = new ResizeObserver(resize);
   observer.observe(holder);
   resize();
+  loadImage(new URL('./assets/snowman.png', import.meta.url).href).then(image => {
+    if (disposed) return;
+    snowman = image;
+    render();
+  }).catch(error => console.warn(error.message));
   return {
     setPhoto(value) { photo = value; render(); },
     update(dt) { time += Math.min(dt, .05) * (1 + boost * 2); boost = Math.max(0, boost - dt * .3); },
     render,
     swirl() { boost = 1; },
-    dispose() { observer.disconnect(); },
+    dispose() { disposed = true; observer.disconnect(); },
   };
 }
